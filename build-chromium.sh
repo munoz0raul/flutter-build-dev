@@ -1,0 +1,24 @@
+#!/bin/bash
+# Build Chromium
+
+set -ex
+
+export CXX=g++
+export PATH=/depot_tools:/root/ninja:$PATH
+
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+cd depot_tools
+git checkout 8dd74d4f85a739ff883831960c665b0a3a24ec36
+
+cd /root/
+git clone https://github.com/ninja-build/ninja.git -b v1.8.2
+
+
+mkdir  /root/engine
+mv /root/gclient /root/engine/.gclient
+cd /root/engine
+gclient sync --shallow --no-history -R -D
+
+#patch -f -p1 < /root/0015-IWYU-add-memory-for-std-unique_ptr-in-base-CommandLi.patch && \
+
+#autoninja -C out/Default/ chrome

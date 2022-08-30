@@ -1,0 +1,54 @@
+# Copyright (c) 2021 Foundries.io
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# For testing in the LmP
+# docker build --tag hub.foundries.io/lmp/0chromium-imx8-aarch64:latest .
+FROM debian:bullseye-20220316-slim AS build
+
+LABEL maintainer="Raul Munoz <raul@foundries.io>"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+#patches from: https://github.com/OSSystems/meta-browser/tree/master/meta-chromium/recipes-browser/chromium/files/chromium-wayland
+# and https://github.com/OSSystems/meta-browser/tree/master/meta-chromium/recipes-browser/chromium/files
+COPY [ \
+      "setup_12.x", \
+      "llvm.sh", \
+      "create-links.sh", \
+      "build-chromium.sh", \
+      "patches/0001-clang-toolchain.patch", \
+      "patches/0002-x64-sysroot-assert.patch", \
+      "patches/0001-allow-deprecated-calls.patch", \
+      "patches/0001-remove-x11-dependency.patch", \
+      "patches/0001-prevent-redefinition-of-glib_autoptr_clear_AtkObject.patch", \
+      "gclient", \
+      "/root/"]
+
+
+RUN apt-get update -y && \
+    apt-get install -y vim curl wget \
+                       git ca-certificates lsb-release wget software-properties-common && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    bash /root/setup_12.x && \
+    apt-get --purge remove -y gcc g++ cpp && \
+    apt-get update -y && \
+    apt-get install -y gcc-10 g++-10 nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    bash /root/llvm.sh && \
+    bash /root/create-links.sh && \
+    bash /root/build-chromium.sh
+
+CMD ["/bin/bash"]
